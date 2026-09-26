@@ -39,6 +39,7 @@ app.add_middleware(
     "http://localhost:3000",
     "http://127.0.0.1:5173",
     "https://ai-emergency-response-intelligence-nine.vercel.app",
+    "https://ai-emergency-response-intelligence-platform-f49m-lm9msvoih.vercel.app",
   ],
     allow_credentials=True,
     allow_methods=["*"],
