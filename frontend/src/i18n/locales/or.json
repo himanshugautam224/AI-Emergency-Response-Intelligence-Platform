@@ -1,0 +1,53 @@
+{
+  "nav": {
+    "dashboard": "ଡ୍ୟାସବୋର୍ଡ",
+    "liveMap": "ଲାଇଭ ମ୍ୟାପ",
+    "incidents": "ଘଟଣା",
+    "sos": "SOS ରିପୋର୍ଟ",
+    "resources": "ଉତ୍ସ",
+    "volunteers": "ସ୍ବେଚ୍ଛାସେବୀ",
+    "comms": "ଯୋଗାଯୋଗ",
+    "aiEngine": "AI ଇଞ୍ଜିନ",
+    "analytics": "ବିଶ୍ଳେଷଣ",
+    "liveFeeds": "ଲାଇଭ ଫିଡ",
+    "settings": "ସଟିଂ"
+  },
+  "dashboard": {
+    "title": "ଅପରେସନ ଡ୍ୟାସବୋର୍ଡ",
+    "activeIncidents": "ସକ୍ରିୟ ଘଟଣା",
+    "totalAffected": "ମୋଟ ପ୍ରଭାବିତ",
+    "resourcesDeployed": "ଡ୍ୟାପ୍ଲୟ ସ୍ଥିତ",
+    "sosAlerts": "SOS ଚେତାବନୀ",
+    "welcome": "ପୁଣି ସ୍ୱାଗତ",
+    "refresh": "ରିଫ୍ରେଶ",
+    "noIncidents": "କୌଣସି ସକ୍ରିୟ ଘଟଣା ନାହିଁ"
+  },
+  "common": {
+    "live": "ଲାଇଭ",
+    "offline": "ଅଫଲାଇନ",
+    "loading": "ଲୋଡ ହେଉଛି...",
+    "search": "ଘଟଣା, ସ୍ଥାନ ଖୋଜନ୍ତୁ...",
+    "admin": "ଆଡ୍ମିନ",
+    "signOut": "ସାଇନ ଆଉଟ",
+    "liveOperations": "ଲାଇଭ ଅପରେସନ ସକ୍ରିୟ"
+  },
+  "auth": {
+    "signIn": "ERIP India ରେ ସାଇନ ଇନ କରନ୍ତୁ",
+    "subtitle": "AI ଜରୁରୀ ପ୍ରତିକ୍ରିୟା ପ୍ଲାଟଫର୍ମ"
+  },
+  "lang": {
+    "select": "ଭାଷା",
+    "en": "English",
+    "hi": "Hindi",
+    "bn": "Bengali",
+    "ta": "Tamil",
+    "te": "Telugu",
+    "mr": "Marathi",
+    "gu": "Gujarati",
+    "kn": "Kannada",
+    "or": "Odia",
+    "ml": "Malayalam",
+    "pa": "Punjabi",
+    "as": "Assamese"
+  }
+}

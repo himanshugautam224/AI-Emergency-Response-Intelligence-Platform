@@ -1,0 +1,53 @@
+{
+  "nav": {
+    "dashboard": "ডেচবর্ড",
+    "liveMap": "জীৱন্ত মেপ",
+    "incidents": "ঘটনাসমূহ",
+    "sos": "SOS প্ৰতিবেদন",
+    "resources": "সম্পদ",
+    "volunteers": "স্বেচ্ছাসেৱক",
+    "comms": "যোগাযোগ",
+    "aiEngine": "AI ইঞ্জিন",
+    "analytics": "বিশ্লেষণ",
+    "liveFeeds": "জীৱন্ত ফিড",
+    "settings": "ছেটিং"
+  },
+  "dashboard": {
+    "title": "অপাৰেশ্বন ডেচবর্ড",
+    "activeIncidents": "সক্ৰিয় ঘটনা",
+    "totalAffected": "মুঠ আক্ৰান্ত",
+    "resourcesDeployed": "মোতায়েন সম্পদ",
+    "sosAlerts": "SOS সতৰ্কতা",
+    "welcome": "পুনৰ স্বাগতম",
+    "refresh": "ৰিফ্ৰেছ",
+    "noIncidents": "কোনো সক্ৰিয় ঘটনা নাই"
+  },
+  "common": {
+    "live": "জীৱন্ত",
+    "offline": "অফলাইন",
+    "loading": "লোড হৈছে...",
+    "search": "ঘটনা, ঠাই বিচাৰক...",
+    "admin": "এডমিন",
+    "signOut": "চাইন আউট",
+    "liveOperations": "জীৱন্ত অপাৰেশ্বন সক্ৰিয়"
+  },
+  "auth": {
+    "signIn": "ERIP India ত চাইন ইন কৰক",
+    "subtitle": "AI জৰুৰীকালীন সঁহাৰি মঞ্চ"
+  },
+  "lang": {
+    "select": "ভাষা",
+    "en": "English",
+    "hi": "Hindi",
+    "bn": "Bengali",
+    "ta": "Tamil",
+    "te": "Telugu",
+    "mr": "Marathi",
+    "gu": "Gujarati",
+    "kn": "Kannada",
+    "or": "Odia",
+    "ml": "Malayalam",
+    "pa": "Punjabi",
+    "as": "Assamese"
+  }
+}

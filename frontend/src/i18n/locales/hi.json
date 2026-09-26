@@ -1,0 +1,100 @@
+{
+  "nav": {
+    "dashboard": "डैशबोर्ड",
+    "liveMap": "लाइव मैप",
+    "incidents": "घटनाएँ",
+    "sos": "SOS रिपोर्ट",
+    "resources": "संसाधन",
+    "volunteers": "स्वयंसेवक",
+    "comms": "संचार",
+    "aiEngine": "AI इंजन",
+    "analytics": "विश्लेषण",
+    "liveFeeds": "लाइव फ़ीड",
+    "settings": "सेटिंग्स"
+  },
+  "dashboard": {
+    "title": "ऑपरेशन्स डैशबोर्ड",
+    "breadcrumb": "ऑपरेशन्स / डैशबोर्ड",
+    "activeIncidents": "सक्रिय घटनाएँ",
+    "totalAffected": "कुल प्रभावित",
+    "resourcesDeployed": "तैनात संसाधन",
+    "sosAlerts": "SOS अलर्ट",
+    "recentIncidents": "हालिया सक्रिय घटनाएँ",
+    "systemStatus": "सिस्टम स्थिति",
+    "welcome": "वापस स्वागत है",
+    "lastRefresh": "अंतिम अपडेट",
+    "refresh": "ताज़ा करें",
+    "noIncidents": "कोई सक्रिय घटना नहीं"
+  },
+  "map": {
+    "title": "लाइव घटना मानचित्र",
+    "breadcrumb": "ऑपरेशन्स / लाइव मैप",
+    "loadingMap": "मैप लोड हो रहा है…",
+    "incidents": "घटनाएँ",
+    "riskZones": "जोखिम क्षेत्र",
+    "darkMode": "डार्क",
+    "satellite": "सैटेलाइट",
+    "street": "सड़क"
+  },
+  "sos": {
+    "title": "नागरिक SOS आपातकालीन प्रसारण",
+    "breadcrumb": "ऑपरेशन्स / SOS रिपोर्ट",
+    "dispatch": "टीम भेजें",
+    "severity": "गंभीरता",
+    "people": "फंसे लोग",
+    "verified": "सत्यापित",
+    "category": "श्रेणी"
+  },
+  "incidents": {
+    "title": "घटना प्रबंधन",
+    "breadcrumb": "ऑपरेशन्स / घटनाएँ",
+    "addIncident": "घटना जोड़ें",
+    "filter": "फ़िल्टर",
+    "status": "स्थिति",
+    "alertLevel": "अलर्ट स्तर",
+    "location": "स्थान",
+    "type": "प्रकार",
+    "noIncidents": "कोई घटना नहीं मिली"
+  },
+  "common": {
+    "live": "लाइव",
+    "offline": "ऑफलाइन",
+    "loading": "लोड हो रहा है…",
+    "error": "त्रुटि",
+    "save": "सहेजें",
+    "cancel": "रद्द करें",
+    "delete": "हटाएँ",
+    "edit": "संपादित करें",
+    "search": "घटनाएँ, स्थान खोजें…",
+    "admin": "एडमिन",
+    "online": "ऑनलाइन",
+    "signOut": "साइन आउट",
+    "liveOperations": "लाइव ऑपरेशन सक्रिय"
+  },
+  "auth": {
+    "signIn": "ERIP India में साइन इन करें",
+    "signUp": "अपना ERIP खाता बनाएं",
+    "subtitle": "AI आपातकालीन प्रतिक्रिया बुद्धिमत्ता मंच",
+    "agencies": "NDRF · SDRF · अग्नि एवं बचाव · चिकित्सा दल · IAF"
+  },
+  "theme": {
+    "dark": "डार्क मोड",
+    "light": "लाइट मोड",
+    "toggle": "थीम बदलें"
+  },
+  "lang": {
+    "select": "भाषा",
+    "en": "English",
+    "hi": "हिंदी",
+    "bn": "বাংলা",
+    "ta": "தமிழ்",
+    "te": "తెలుగు",
+    "mr": "मराठी",
+    "gu": "ગુજરાতી",
+    "kn": "ಕನ್ನಡ",
+    "or": "ଓଡ଼ିଆ",
+    "ml": "മലയാളം",
+    "pa": "ਪੰਜਾਬੀ",
+    "as": "অসমীয়া"
+  }
+}

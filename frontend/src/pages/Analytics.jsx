@@ -1,5 +1,4 @@
 import React from 'react';
-import Topbar from '../components/Topbar';
 import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip,
   ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line
@@ -30,7 +29,6 @@ const STATE_VULNERABILITY = [
 export default function Analytics() {
   return (
     <div className="page-wrapper">
-      <Topbar title="Disaster Intelligence & Analytics" breadcrumb="Intelligence / Analytics" />
 
       {/* Top Charts Row */}
       <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 20, marginBottom: 20 }}>

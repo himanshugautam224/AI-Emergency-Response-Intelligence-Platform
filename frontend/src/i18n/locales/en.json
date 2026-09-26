@@ -1,0 +1,100 @@
+{
+  "nav": {
+    "dashboard": "Dashboard",
+    "liveMap": "Live Map",
+    "incidents": "Incidents",
+    "sos": "SOS Reports",
+    "resources": "Resources",
+    "volunteers": "Volunteers",
+    "comms": "Communications",
+    "aiEngine": "AI Engine",
+    "analytics": "Analytics",
+    "liveFeeds": "Live Feeds",
+    "settings": "Settings"
+  },
+  "dashboard": {
+    "title": "Operations Dashboard",
+    "breadcrumb": "Operations / Dashboard",
+    "activeIncidents": "Active Incidents",
+    "totalAffected": "Total Affected",
+    "resourcesDeployed": "Resources Deployed",
+    "sosAlerts": "SOS Alerts",
+    "recentIncidents": "Recent Active Incidents",
+    "systemStatus": "System Status",
+    "welcome": "Welcome back",
+    "lastRefresh": "Last refresh",
+    "refresh": "Refresh",
+    "noIncidents": "No active incidents"
+  },
+  "map": {
+    "title": "Live Incident Map",
+    "breadcrumb": "Operations / Live Map",
+    "loadingMap": "Loading map…",
+    "incidents": "Incidents",
+    "riskZones": "Risk Zones",
+    "darkMode": "Dark",
+    "satellite": "Satellite",
+    "street": "Street"
+  },
+  "sos": {
+    "title": "Citizen SOS Emergency Broadcasts",
+    "breadcrumb": "Operations / SOS Reports",
+    "dispatch": "Dispatch Team",
+    "severity": "Severity",
+    "people": "Trapped",
+    "verified": "Verified",
+    "category": "Category"
+  },
+  "incidents": {
+    "title": "Incident Management",
+    "breadcrumb": "Operations / Incidents",
+    "addIncident": "Add Incident",
+    "filter": "Filter",
+    "status": "Status",
+    "alertLevel": "Alert Level",
+    "location": "Location",
+    "type": "Type",
+    "noIncidents": "No incidents found"
+  },
+  "common": {
+    "live": "LIVE",
+    "offline": "OFFLINE",
+    "loading": "Loading…",
+    "error": "Error",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "search": "Search incidents, locations…",
+    "admin": "ADMIN",
+    "online": "Online",
+    "signOut": "Sign Out",
+    "liveOperations": "LIVE OPERATIONS ACTIVE"
+  },
+  "auth": {
+    "signIn": "Sign in to ERIP India",
+    "signUp": "Create your ERIP Account",
+    "subtitle": "AI Emergency Response Intelligence Platform",
+    "agencies": "NDRF · SDRF · Fire & Rescue · Medical Corps · IAF"
+  },
+  "theme": {
+    "dark": "Dark Mode",
+    "light": "Light Mode",
+    "toggle": "Toggle Theme"
+  },
+  "lang": {
+    "select": "Language",
+    "en": "English",
+    "hi": "हिंदी",
+    "bn": "বাংলা",
+    "ta": "தமிழ்",
+    "te": "తెలుగు",
+    "mr": "मराठी",
+    "gu": "ગુજરાતી",
+    "kn": "ಕನ್ನಡ",
+    "or": "ଓଡ଼ିଆ",
+    "ml": "മലയാളം",
+    "pa": "ਪੰਜਾਬੀ",
+    "as": "অসমীয়া"
+  }
+}

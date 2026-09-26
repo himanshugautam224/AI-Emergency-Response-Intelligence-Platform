@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, Circle } from 'react-leaflet';
+import React, { useEffect, useState, useRef } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, Circle, LayerGroup, ZoomControl, useMap } from 'react-leaflet';
+import { RefreshCw, AlertTriangle, Layers, MapPin, Navigation, Crosshair } from 'lucide-react';
 import L from 'leaflet';
-import Topbar from '../components/Topbar';
-import { incidentsAPI } from '../api/client';
-import { AlertTriangle, Filter, Layers, Navigation, Shield, Flame, Waves, Wind } from 'lucide-react';
+import 'leaflet/dist/leaflet.css';
+import { incidentsAPI, riskAPI } from '../api/client';
+import { useGeolocation } from '../hooks/useGeolocation';
 
-// Fix Leaflet default icon issues in React
+// Fix Leaflet icon issue in Vite
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
@@ -13,291 +14,346 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 });
 
-// Custom incident icons based on alert level
-const createCustomIcon = (alertLevel) => {
-  const color = alertLevel === 'red' ? '#ef4444' : alertLevel === 'orange' ? '#f97316' : '#22c55e';
-  const pulseClass = alertLevel === 'red' ? 'animation: pulse 1.5s infinite;' : '';
-  return L.divIcon({
-    className: 'custom-leaflet-marker',
-    html: `
-      <div style="
-        background: ${color};
-        width: 28px;
-        height: 28px;
-        border-radius: 50%;
-        border: 3px solid white;
-        box-shadow: 0 0 15px ${color};
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-size: 13px;
-        font-weight: bold;
-        ${pulseClass}
-      ">
-        !
-      </div>
-    `,
-    iconSize: [28, 28],
-    iconAnchor: [14, 14],
-  });
+const ALERT_COLORS = {
+  critical: '#ef4444',
+  high: '#f97316',
+  medium: '#eab308',
+  low: '#22c55e',
 };
 
-const INITIAL_INCIDENTS = [
-  {
-    id: 1,
-    title: 'Severe Cyclone Dana - Coastal Surge',
-    disaster_type: 'cyclone',
-    alert_level: 'red',
-    latitude: 20.9517,
-    longitude: 86.8530,
-    state: 'Odisha',
-    district: 'Bhadrak',
-    affected_population: 185000,
-    status: 'active',
-    severity_score: 0.94,
-  },
-  {
-    id: 2,
-    title: 'Flash Flooding & Mithi River Overspill',
-    disaster_type: 'flood',
-    alert_level: 'red',
-    latitude: 19.0760,
-    longitude: 72.8777,
-    state: 'Maharashtra',
-    district: 'Mumbai Suburban',
-    affected_population: 340000,
-    status: 'responding',
-    severity_score: 0.88,
-  },
-  {
-    id: 3,
-    title: 'Major Landslide & Debris Flow',
-    disaster_type: 'landslide',
-    alert_level: 'red',
-    latitude: 11.5534,
-    longitude: 76.1320,
-    state: 'Kerala',
-    district: 'Wayanad',
-    affected_population: 1200,
-    status: 'active',
-    severity_score: 0.96,
-  },
-  {
-    id: 4,
-    title: 'Beas River Spate & Highway Breach',
-    disaster_type: 'flood',
-    alert_level: 'orange',
-    latitude: 31.9579,
-    longitude: 77.1095,
-    state: 'Himachal Pradesh',
-    district: 'Kullu',
-    affected_population: 6500,
-    status: 'responding',
-    severity_score: 0.76,
-  },
-  {
-    id: 5,
-    title: 'Industrial Chemical Leak & Fire',
-    disaster_type: 'industrial',
-    alert_level: 'orange',
-    latitude: 21.6264,
-    longitude: 72.9990,
-    state: 'Gujarat',
-    district: 'Bharuch',
-    affected_population: 8500,
-    status: 'controlled',
-    severity_score: 0.72,
-  },
-];
+function createMarkerIcon(color, size = 14) {
+  return L.divIcon({
+    className: '',
+    html: `<div style="width:${size}px;height:${size}px;border-radius:50%;background:${color};border:2px solid white;box-shadow:0 0 8px ${color}80;"></div>`,
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+  });
+}
+
+const userLocationIcon = L.divIcon({
+  className: '',
+  html: `
+    <div style="position:relative;width:20px;height:20px;">
+      <div style="position:absolute;inset:0;border-radius:50%;background:#3b82f6;border:3px solid white;box-shadow:0 0 12px #3b82f680;"></div>
+      <div style="position:absolute;inset:-8px;border-radius:50%;background:rgba(59,130,246,0.2);animation:pulse 2s infinite;"></div>
+    </div>`,
+  iconSize: [20, 20],
+  iconAnchor: [10, 10],
+});
+
+// Component to fly to coordinates when they become available
+function FlyToLocation({ lat, lon }) {
+  const map = useMap();
+  const hasFlewRef = useRef(false);
+  useEffect(() => {
+    if (lat && lon && !hasFlewRef.current) {
+      map.flyTo([lat, lon], 10, { duration: 2 });
+      hasFlewRef.current = true;
+    }
+  }, [lat, lon, map]);
+  return null;
+}
 
 export default function LiveMap() {
-  const [incidents, setIncidents] = useState(INITIAL_INCIDENTS);
-  const [filterType, setFilterType] = useState('all');
-  const [filterAlert, setFilterAlert] = useState('all');
-  const [selectedIncident, setSelectedIncident] = useState(null);
+  const geo = useGeolocation();
+  const [incidents, setIncidents] = useState([]);
+  const [heatmap, setHeatmap] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showHeatmap, setShowHeatmap] = useState(true);
+  const [showUserLocation, setShowUserLocation] = useState(true);
+  const [filterLevel, setFilterLevel] = useState('all');
+  const [mapStyle, setMapStyle] = useState('dark');
 
-  useEffect(() => {
-    incidentsAPI.list()
-      .then((res) => {
-        if (res.data?.results && res.data.results.length > 0) {
-          setIncidents(res.data.results);
-        }
-      })
-      .catch((err) => {
-        console.warn('Using seeded incidents for map display', err);
-      });
-  }, []);
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const [incRes, heatRes] = await Promise.all([
+        incidentsAPI.list({ limit: 500 }).catch(() => ({ data: [] })),
+        riskAPI.heatmap().catch(() => ({ data: [] })),
+      ]);
+      setIncidents(incRes.data || []);
+      setHeatmap(heatRes.data || []);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const filteredIncidents = incidents.filter((inc) => {
-    if (filterType !== 'all' && inc.disaster_type !== filterType) return false;
-    if (filterAlert !== 'all' && inc.alert_level !== filterAlert) return false;
-    return true;
-  });
+  useEffect(() => { fetchData(); }, []);
+
+  const filtered = filterLevel === 'all'
+    ? incidents
+    : incidents.filter(i => i.alert_level === filterLevel);
+
+  const withCoords = filtered.filter(i => i.latitude && i.longitude);
+
+  // Default center: India center (map loads here, then flies to user)
+  const defaultCenter = [20.5937, 78.9629];
 
   return (
-    <div className="page-wrapper">
-      <Topbar title="Tactical Operations Map" breadcrumb="Operations / Live Map" />
+    <div style={{ height: 'calc(100vh - var(--topbar-h))', display: 'flex', flexDirection: 'column', width: '100%', position: 'relative', overflow: 'hidden' }}>
 
-      {/* Map Controls Header */}
+      {/* Tactical Map Toolbar */}
       <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        marginBottom: 16,
-        gap: 12,
-        flexWrap: 'wrap'
+        padding: '10px 20px', background: 'var(--bg-card)', borderBottom: '1px solid var(--border)',
+        display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontSize: 13, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 6 }}>
-            <Filter size={14} /> Filter Type:
-          </span>
-          <select
-            className="input-control"
-            value={filterType}
-            onChange={(e) => setFilterType(e.target.value)}
-            style={{ padding: '6px 12px', fontSize: 13 }}
-          >
-            <option value="all">All Disasters</option>
-            <option value="cyclone">Cyclones</option>
-            <option value="flood">Floods</option>
-            <option value="landslide">Landslides</option>
-            <option value="industrial">Industrial</option>
-          </select>
 
-          <span style={{ fontSize: 13, color: 'var(--text-muted)', marginLeft: 10 }}>Alert Level:</span>
-          <select
-            className="input-control"
-            value={filterAlert}
-            onChange={(e) => setFilterAlert(e.target.value)}
-            style={{ padding: '6px 12px', fontSize: 13 }}
-          >
-            <option value="all">All Levels</option>
-            <option value="red">Red Alert (Critical)</option>
-            <option value="orange">Orange Alert (Severe)</option>
-            <option value="green">Green Alert (Normal)</option>
-          </select>
+        {/* User location chip */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px',
+          borderRadius: 6, fontSize: 11, fontWeight: 600,
+          background: geo.loading ? 'rgba(59,130,246,0.1)' : geo.error ? 'rgba(239,68,68,0.1)' : 'rgba(34,197,94,0.1)',
+          color: geo.loading ? '#60a5fa' : geo.error ? '#f87171' : '#4ade80',
+          border: `1px solid ${geo.loading ? 'rgba(59,130,246,0.3)' : geo.error ? 'rgba(239,68,68,0.3)' : 'rgba(34,197,94,0.3)'}`,
+        }}>
+          {geo.loading ? (
+            <><Navigation size={10} style={{ animation: 'spin 1.5s linear infinite' }} /> Detecting location…</>
+          ) : geo.error ? (
+            <><AlertTriangle size={10} /> Location unavailable</>
+          ) : (
+            <><Crosshair size={10} /> {geo.lat.toFixed(3)}°N, {geo.lon.toFixed(3)}°E</>
+          )}
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 12 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#ef4444' }}></span> Red Alert ({incidents.filter(i => i.alert_level === 'red').length})
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#f97316' }}></span> Orange Alert ({incidents.filter(i => i.alert_level === 'orange').length})
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#22c55e' }}></span> Responded
-          </div>
+        <div style={{ flex: 1 }} />
+
+        {/* Map Style */}
+        <div style={{ display: 'flex', gap: 4, background: 'var(--surface-2)', padding: 3, borderRadius: 8, border: '1px solid var(--border)' }}>
+          {[
+            { id: 'dark', label: 'Dark' },
+            { id: 'satellite', label: 'Satellite' },
+            { id: 'street', label: 'Street' },
+          ].map(style => (
+            <button
+              key={style.id}
+              onClick={() => setMapStyle(style.id)}
+              style={{
+                padding: '4px 8px', borderRadius: 6, fontSize: 11, fontWeight: 600,
+                border: 'none', cursor: 'pointer',
+                background: mapStyle === style.id ? 'var(--primary)' : 'transparent',
+                color: mapStyle === style.id ? '#fff' : 'var(--text-muted)',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              {style.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Alert filters */}
+        <div style={{ display: 'flex', gap: 6 }}>
+          {['all', 'critical', 'high', 'medium', 'low'].map(level => (
+            <button
+              key={level}
+              onClick={() => setFilterLevel(level)}
+              style={{
+                padding: '4px 10px', borderRadius: 6, fontSize: 11, fontWeight: 600,
+                cursor: 'pointer', border: '1px solid',
+                background: filterLevel === level ? (ALERT_COLORS[level] || 'var(--primary)') + '20' : 'transparent',
+                color: filterLevel === level ? (ALERT_COLORS[level] || 'var(--primary)') : 'var(--text-muted)',
+                borderColor: filterLevel === level ? (ALERT_COLORS[level] || 'var(--primary)') + '50' : 'var(--border)',
+                textTransform: 'capitalize',
+              }}
+            >
+              {level}
+            </button>
+          ))}
+        </div>
+
+        <button
+          onClick={() => setShowHeatmap(h => !h)}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 5, padding: '6px 10px',
+            background: showHeatmap ? 'rgba(139,92,246,0.15)' : 'var(--surface-2)',
+            border: `1px solid ${showHeatmap ? 'rgba(139,92,246,0.4)' : 'var(--border)'}`,
+            borderRadius: 6, color: showHeatmap ? '#a78bfa' : 'var(--text-muted)',
+            cursor: 'pointer', fontSize: 12,
+          }}
+        >
+          <Layers size={12} /> Risk Zones
+        </button>
+
+        {!geo.error && geo.lat && (
+          <button
+            onClick={() => setShowUserLocation(v => !v)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 5, padding: '6px 10px',
+              background: showUserLocation ? 'rgba(59,130,246,0.15)' : 'var(--surface-2)',
+              border: `1px solid ${showUserLocation ? 'rgba(59,130,246,0.4)' : 'var(--border)'}`,
+              borderRadius: 6, color: showUserLocation ? '#60a5fa' : 'var(--text-muted)',
+              cursor: 'pointer', fontSize: 12,
+            }}
+          >
+            <MapPin size={12} /> My Location
+          </button>
+        )}
+
+        <button onClick={fetchData} disabled={loading} style={{
+          display: 'flex', alignItems: 'center', gap: 5, padding: '6px 10px',
+          background: 'var(--surface-2)', border: '1px solid var(--border)',
+          borderRadius: 6, color: 'var(--text-muted)', cursor: 'pointer', fontSize: 12,
+        }}>
+          <RefreshCw size={12} style={{ animation: loading ? 'spin 0.8s linear infinite' : 'none' }} />
+          Refresh
+        </button>
+
+        <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+          {withCoords.length} incidents plotted
         </div>
       </div>
 
-      {/* Map Container and Info Drawer */}
-      <div style={{ display: 'grid', gridTemplateColumns: selectedIncident ? '1fr 360px' : '1fr', gap: 16, height: 'calc(100vh - 170px)' }}>
-        <div className="card" style={{ padding: 0, overflow: 'hidden', height: '100%', position: 'relative' }}>
-          <MapContainer
-            center={[21.7679, 78.8718]} // Center of India
-            zoom={5}
-            style={{ height: '100%', width: '100%' }}
-          >
-            <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-              url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-            />
+      {/* Map */}
+      <div style={{ flex: 1, position: 'relative' }}>
+        <MapContainer
+          center={defaultCenter}
+          zoom={5}
+          style={{ height: '100%', width: '100%', background: '#0f1117' }}
+          zoomControl={false}
+        >
+          <ZoomControl position="bottomright" />
 
-            {filteredIncidents.map((incident) => (
-              <React.Fragment key={incident.id}>
-                <Marker
-                  position={[incident.latitude, incident.longitude]}
-                  icon={createCustomIcon(incident.alert_level)}
-                  eventHandlers={{
-                    click: () => setSelectedIncident(incident),
+          {/* Fly to user's real location when GPS is ready */}
+          {!geo.loading && !geo.error && geo.lat && (
+            <FlyToLocation lat={geo.lat} lon={geo.lon} />
+          )}
+
+          {mapStyle === 'dark' && (
+            <TileLayer
+              url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}"
+              attribution='&copy; <a href="https://www.esri.com/">Esri</a>'
+              maxZoom={16}
+            />
+          )}
+          {mapStyle === 'satellite' && (
+            <TileLayer
+              url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+              attribution='&copy; <a href="https://www.esri.com/">Esri</a>, Earthstar Geographics'
+              maxZoom={18}
+            />
+          )}
+          {mapStyle === 'street' && (
+            <TileLayer
+              url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}"
+              attribution='&copy; <a href="https://www.esri.com/">Esri</a>'
+              maxZoom={18}
+            />
+          )}
+
+          {/* User's real location marker */}
+          {showUserLocation && !geo.loading && !geo.error && geo.lat && (
+            <Marker position={[geo.lat, geo.lon]} icon={userLocationIcon}>
+              <Popup>
+                <div style={{ minWidth: 180, fontFamily: 'Inter, sans-serif' }}>
+                  <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 4, color: '#3b82f6' }}>📍 Your Location</div>
+                  <div style={{ fontSize: 12, color: '#555' }}>
+                    {geo.lat.toFixed(5)}°N, {geo.lon.toFixed(5)}°E
+                  </div>
+                  {geo.accuracy && (
+                    <div style={{ fontSize: 11, color: '#888', marginTop: 2 }}>
+                      GPS accuracy: ±{Math.round(geo.accuracy)}m
+                    </div>
+                  )}
+                </div>
+              </Popup>
+            </Marker>
+          )}
+
+          {/* Accuracy radius around user */}
+          {showUserLocation && !geo.loading && !geo.error && geo.lat && geo.accuracy && (
+            <Circle
+              center={[geo.lat, geo.lon]}
+              radius={geo.accuracy}
+              pathOptions={{ color: '#3b82f6', fillColor: '#3b82f6', fillOpacity: 0.08, weight: 1 }}
+            />
+          )}
+
+          {/* Risk heatmap circles */}
+          {showHeatmap && (
+            <LayerGroup>
+              {heatmap.map((point, i) => (
+                <Circle
+                  key={i}
+                  center={[point.lat, point.lon]}
+                  radius={80000 * point.intensity}
+                  pathOptions={{
+                    color: 'transparent',
+                    fillColor: `hsl(${Math.round((1 - point.intensity) * 120)}, 80%, 50%)`,
+                    fillOpacity: 0.15,
                   }}
                 >
                   <Popup>
-                    <div style={{ color: '#1e293b', padding: 4 }}>
-                      <strong style={{ fontSize: 13, display: 'block', marginBottom: 4 }}>{incident.title}</strong>
-                      <div style={{ fontSize: 12, color: '#64748b' }}>
-                        📍 {incident.district}, {incident.state}<br/>
-                        👥 Impact: {(incident.affected_population || 0).toLocaleString()} people<br/>
-                        ⚡ Status: {incident.status.toUpperCase()}
-                      </div>
-                    </div>
+                    <strong>{point.label}</strong><br />
+                    Risk Index: {(point.intensity * 100).toFixed(0)}%
                   </Popup>
-                </Marker>
+                </Circle>
+              ))}
+            </LayerGroup>
+          )}
 
-                {incident.alert_level === 'red' && (
-                  <Circle
-                    center={[incident.latitude, incident.longitude]}
-                    radius={35000}
-                    pathOptions={{ color: '#ef4444', fillColor: '#ef4444', fillOpacity: 0.15, weight: 1.5 }}
-                  />
-                )}
-              </React.Fragment>
-            ))}
-          </MapContainer>
-        </div>
-
-        {/* Selected Incident Drawer */}
-        {selectedIncident && (
-          <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 16, overflowY: 'auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <div>
-                <span className={`badge badge-${selectedIncident.alert_level}`}>
-                  {selectedIncident.alert_level?.toUpperCase()} ALERT
-                </span>
-                <h3 style={{ fontSize: 16, fontWeight: 700, marginTop: 8 }}>{selectedIncident.title}</h3>
-                <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>
-                  {selectedIncident.district}, {selectedIncident.state}
-                </span>
-              </div>
-              <button
-                onClick={() => setSelectedIncident(null)}
-                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 16 }}
+          {/* Incident markers */}
+          <LayerGroup>
+            {withCoords.map((inc) => (
+              <Marker
+                key={inc.id}
+                position={[inc.latitude, inc.longitude]}
+                icon={createMarkerIcon(ALERT_COLORS[inc.alert_level] || '#94a3b8')}
               >
-                ✕
-              </button>
-            </div>
+                <Popup>
+                  <div style={{ minWidth: 200, fontFamily: 'Inter, sans-serif' }}>
+                    <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 6 }}>{inc.title}</div>
+                    <div style={{ fontSize: 12, color: '#666', marginBottom: 4 }}>
+                      📍 {inc.location_name} · {inc.state}
+                    </div>
+                    <div style={{ fontSize: 12, marginBottom: 4 }}>
+                      Type: <strong>{inc.disaster_type}</strong>
+                    </div>
+                    <div style={{ fontSize: 12, marginBottom: 4 }}>
+                      Affected: <strong>{inc.affected_population?.toLocaleString()}</strong>
+                    </div>
+                    <div style={{ fontSize: 12, marginBottom: 4 }}>
+                      Casualties: <strong style={{ color: '#ef4444' }}>{inc.casualties}</strong>
+                    </div>
+                    <div style={{
+                      display: 'inline-block', padding: '2px 8px', borderRadius: 4, fontSize: 10,
+                      fontWeight: 700, background: ALERT_COLORS[inc.alert_level] + '20',
+                      color: ALERT_COLORS[inc.alert_level], textTransform: 'uppercase', marginTop: 4,
+                    }}>
+                      {inc.alert_level}
+                    </div>
+                    {inc.risk_score > 0 && (
+                      <div style={{ fontSize: 11, color: '#666', marginTop: 4 }}>
+                        Risk Score: {(inc.risk_score * 100).toFixed(0)}%
+                      </div>
+                    )}
+                  </div>
+                </Popup>
+              </Marker>
+            ))}
+          </LayerGroup>
+        </MapContainer>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-              <div style={{ background: 'rgba(255,255,255,0.03)', padding: 12, borderRadius: 8 }}>
-                <span style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block' }}>Type</span>
-                <strong style={{ fontSize: 13, textTransform: 'capitalize' }}>{selectedIncident.disaster_type}</strong>
-              </div>
-              <div style={{ background: 'rgba(255,255,255,0.03)', padding: 12, borderRadius: 8 }}>
-                <span style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block' }}>Status</span>
-                <strong style={{ fontSize: 13, textTransform: 'capitalize' }}>{selectedIncident.status}</strong>
-              </div>
-              <div style={{ background: 'rgba(255,255,255,0.03)', padding: 12, borderRadius: 8 }}>
-                <span style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block' }}>AI Severity</span>
-                <strong style={{ fontSize: 14, color: 'var(--primary)' }}>
-                  {((selectedIncident.severity_score || 0.85) * 100).toFixed(0)}%
-                </strong>
-              </div>
-              <div style={{ background: 'rgba(255,255,255,0.03)', padding: 12, borderRadius: 8 }}>
-                <span style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block' }}>Affected</span>
-                <strong style={{ fontSize: 14, color: 'var(--secondary)' }}>
-                  {(selectedIncident.affected_population || 0).toLocaleString()}
-                </strong>
-              </div>
+        {/* Map Canvas Legend */}
+        <div style={{
+          position: 'absolute', bottom: 20, left: 20, zIndex: 450,
+          background: 'var(--bg-glass)', backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
+          border: '1px solid var(--border)', borderRadius: 10,
+          padding: '10px 14px', fontSize: 11,
+          boxShadow: 'var(--shadow-md)',
+        }}>
+          {Object.entries(ALERT_COLORS).map(([level, color]) => (
+            <div key={level} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+              <div style={{ width: 8, height: 8, borderRadius: '50%', background: color }} />
+              <span style={{ color: 'var(--text-secondary)', textTransform: 'capitalize' }}>{level}</span>
             </div>
-
-            {selectedIncident.description && (
-              <div style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.5 }}>
-                {selectedIncident.description}
-              </div>
-            )}
-
-            <div style={{ marginTop: 'auto', display: 'flex', gap: 10 }}>
-              <button className="btn btn-primary" style={{ flex: 1 }}>
-                Dispatch Relief
-              </button>
-              <button className="btn btn-secondary" style={{ flex: 1 }}>
-                Coordinate Teams
-              </button>
+          ))}
+          {!geo.error && geo.lat && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4, paddingTop: 4, borderTop: '1px solid var(--border)' }}>
+              <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#3b82f6' }} />
+              <span style={{ color: '#60a5fa' }}>You</span>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );
